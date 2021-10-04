@@ -37,11 +37,4 @@ namespace PosUtils {
 			(static_cast<int>(position.y) & 15)
 		};
 	}
-
-	static constexpr ChunkLocation ConvertWorldPosToChunkLoc(uint16_t x, uint16_t z) {
-		return {
-			(static_cast<int>(x) >> 4),
-			(static_cast<int>(z) >> 4)
-		};
-	}
 }
