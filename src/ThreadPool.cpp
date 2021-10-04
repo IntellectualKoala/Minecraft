@@ -20,7 +20,7 @@ void ThreadPool::Start(unsigned int threads) {
 
 					m_Condition.wait(lock, [&] {
 						return (!m_Tasks.empty() || m_Terminate);
-					});
+						});
 
 					if (m_Terminate)
 						break;
@@ -34,7 +34,7 @@ void ThreadPool::Start(unsigned int threads) {
 
 				job();
 			}
-		}));
+			}));
 	}
 }
 

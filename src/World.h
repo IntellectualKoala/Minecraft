@@ -31,7 +31,7 @@ public:
 
 	void SetChunk(const ChunkLocation& location, Chunk&& chunk);
 	Chunk& GetChunk(const ChunkLocation& location);
-	
+
 	inline void UpdateRadius(unsigned int radius) {
 		m_NumChunks = M_PI * m_Radius * m_Radius;
 		m_Radius = radius;
