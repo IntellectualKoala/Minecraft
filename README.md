@@ -14,5 +14,5 @@ It is currently very bare-bones.
 Make sure the Vulkan SDK is installed.
 ```
 git clone https://github.com/IntellectualKoala/Minecraft --recursive
-cmake -S Minecraft -B Minecraft\build
+cmake -S Minecraft -B Minecraft/build
 ```
