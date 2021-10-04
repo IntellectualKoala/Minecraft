@@ -35,7 +35,7 @@ file(GLOB_RECURSE SHADER_FILES
 
 foreach(SHADER_PATH ${SHADER_FILES})
     get_filename_component(SHADER ${SHADER_PATH} NAME)
-    set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/$<CONFIG>/res/shaders/${SHADER}.spv)
+    set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/res/shaders/${SHADER}.spv)
 
     add_custom_command(
            OUTPUT ${SHADER_OUTPUT_PATH}
