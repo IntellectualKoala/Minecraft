@@ -9,7 +9,7 @@
     X(Glass, BLOCK_DATA_SOLID_BIT | BLOCK_DATA_TRANSPERENT_BIT)
 
 enum class BlockType : uint8_t {
-#define X(name) name,
+#define X(name, data) name,
 	BLOCK_TYPES(X)
 #undef X
 	Count
