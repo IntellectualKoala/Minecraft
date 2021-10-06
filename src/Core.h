@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pch.h"
+
 #define PROFILING
 
 #ifdef PROFILING
@@ -28,7 +30,7 @@ public:
 };
 
 #define PROFILE_SCOPE(id) Timer timer = Timer(id " %dms\n");
-#define PROFILE_SCOPE() Timer timer = Timer(__FUNCTION__ " %dms\n");
+#define PROFILE_SCOPE_() Timer timer = Timer(__FUNCTION__ " %dms\n");
 #else
 #define PROFILE_SCOPE(id)
 #define PROFILE()

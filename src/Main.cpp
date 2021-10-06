@@ -1,8 +1,6 @@
 #include "pch.h"
 
 #include "Application.h"
-#include "Chunk.h"
-#include "Core.h"
 
 int main() {
 	Application app;
