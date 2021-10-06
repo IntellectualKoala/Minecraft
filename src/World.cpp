@@ -37,7 +37,7 @@ void World::Generate(const ChunkLocation& origin) {
 	m_GenState = WorldGenerationState::GeneratingBlocks;
 
 	loop([&](const ChunkLocation& location) {
-		SetChunk(location, std::move(Chunk()));
+		SetChunk(location, Chunk());
 		GetChunk(location).Generate(/* location */);
 	});
 
@@ -63,13 +63,15 @@ void World::Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc) 
 		switch (it->second.GetState())
 		{
 		case ChunkState::Removed:
-		{
-			std::lock_guard lock(m_Mutex);
-			m_Chunks.erase(it);
-		}
-		continue;
+			{
+				std::lock_guard lock(m_Mutex);
+				m_Chunks.erase(it);
+			}
+			continue;
 		case ChunkState::GeneratedMesh:
 			it->second.BufferMesh(meshBufferFunc);
+		default:
+			break;
 		}
 
 		++it;
