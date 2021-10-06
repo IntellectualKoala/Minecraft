@@ -64,7 +64,7 @@ void World::Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc) 
 		{
 		case ChunkState::Removed:
 			{
-				std::lock_guard lock(m_Mutex);
+				std::lock_guard<std::mutex> lock(m_Mutex);
 				m_Chunks.erase(it);
 			}
 			continue;
@@ -79,11 +79,11 @@ void World::Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc) 
 }
 
 void World::SetChunk(const ChunkLocation& location, Chunk&& chunk) {
-	std::lock_guard lock(m_Mutex);
+	std::lock_guard<std::mutex> lock(m_Mutex);
 	m_Chunks.emplace(location, std::move(chunk));
 }
 
 Chunk& World::GetChunk(const ChunkLocation& location) {
-	std::lock_guard lock(m_Mutex);
+	std::lock_guard<std::mutex> lock(m_Mutex);
 	return m_Chunks.at(location);
 }

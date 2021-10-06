@@ -146,32 +146,32 @@ private:
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* m_Window, double xpos, double ypos)
-			{
-				auto game = static_cast<Application*>(glfwGetWindowUserPointer(m_Window));
+		{
+			auto game = static_cast<Application*>(glfwGetWindowUserPointer(m_Window));
 
-				static float lastX = xpos, lastY = ypos;
-				static float pitch = glm::degrees(glm::asin(game->m_Camera.front.y)),
-					yaw = glm::degrees(std::atan2(game->m_Camera.front.z, game->m_Camera.front.x));
+			static float lastX = xpos, lastY = ypos;
+			static float pitch = glm::degrees(glm::asin(game->m_Camera.front.y)),
+				yaw = glm::degrees(glm::atan(game->m_Camera.front.z, game->m_Camera.front.x));
 
-				float xoffset = static_cast<float>(xpos - lastX);
-				float yoffset = lastY - static_cast<float>(ypos);
-				lastX = static_cast<float>(xpos);
-				lastY = static_cast<float>(ypos);
+			float xoffset = static_cast<float>(xpos - lastX);
+			float yoffset = lastY - static_cast<float>(ypos);
+			lastX = static_cast<float>(xpos);
+			lastY = static_cast<float>(ypos);
 
-				xoffset *= game->m_Camera.sensitivity;
-				yoffset *= game->m_Camera.sensitivity;
+			xoffset *= game->m_Camera.sensitivity;
+			yoffset *= game->m_Camera.sensitivity;
 
-				yaw += xoffset;
-				pitch += yoffset;
+			yaw += xoffset;
+			pitch += yoffset;
 
-				pitch = std::clamp(pitch, -89.9f, 89.9f);
+			pitch = glm::clamp(pitch, -89.9f, 89.9f);
 
-				game->m_Camera.front = glm::normalize(glm::vec3{
-					cos(glm::radians(yaw)) * cos(glm::radians(pitch)),
-					sin(glm::radians(pitch)),
-					sin(glm::radians(yaw)) * cos(glm::radians(pitch))
-					});
+			game->m_Camera.front = glm::normalize(glm::vec3{
+				cos(glm::radians(yaw)) * cos(glm::radians(pitch)),
+				sin(glm::radians(pitch)),
+				sin(glm::radians(yaw)) * cos(glm::radians(pitch))
 			});
+		});
 	}
 
 	static void FramebufferResizeCallback(GLFWwindow* m_Window, int width, int height) {
@@ -200,7 +200,7 @@ private:
 		m_World.Update([&](const ChunkMesh& mesh) {
 			CreateVertexBuffer<ChunkVertex>(mesh.first);
 			CreateIndexBuffer(mesh.second);
-			});
+		});
 
 		CreateUniformBuffers();
 		CreateDescriptorPool();
