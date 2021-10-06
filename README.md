@@ -11,8 +11,14 @@ It is currently very bare-bones.
 * Etc.
 
 ## How to build
-Make sure the Vulkan SDK is installed.
+1. Make sure the Vulkan SDK is installed.
+2. Clone the repository with git (make sure to use the --recursive flag to initialize the submodules)
+3. Build with cmake however you like.
+
+Your commands should look roughly like this:
 ```
 git clone https://github.com/IntellectualKoala/Minecraft --recursive
 cmake -S Minecraft -B Minecraft/build
 ```
+
+Note: Make sure the compiled `res` folder is in your executable's working directory, otherwise the binary won't be able to locate the resources.
