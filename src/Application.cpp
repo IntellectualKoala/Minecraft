@@ -1,5 +1,3 @@
-#pragma once
-
 #include "pch.h"
 
 #include "Camera.h"
@@ -149,12 +147,12 @@ private:
 		{
 			auto game = static_cast<Application*>(glfwGetWindowUserPointer(m_Window));
 
-			static float lastX = xpos, lastY = ypos;
+			static float lastX = static_cast<float>(xpos), lastY = static_cast<float>(ypos);
 			static float pitch = glm::degrees(glm::asin(game->m_Camera.front.y)),
 				yaw = glm::degrees(glm::atan(game->m_Camera.front.z, game->m_Camera.front.x));
 
 			float xoffset = static_cast<float>(xpos - lastX);
-			float yoffset = lastY - static_cast<float>(ypos);
+			float yoffset = static_cast<float>(lastY - ypos);
 			lastX = static_cast<float>(xpos);
 			lastY = static_cast<float>(ypos);
 
@@ -162,6 +160,12 @@ private:
 			yoffset *= game->m_Camera.sensitivity;
 
 			yaw += xoffset;
+
+			if (yaw < 0)
+				yaw += 360;
+			if (yaw > 360)
+				yaw = 0;
+
 			pitch += yoffset;
 
 			pitch = glm::clamp(pitch, -89.9f, 89.9f);
@@ -1463,3 +1467,17 @@ private:
 			m_Camera.position -= m_Camera.up * speed;
 	}
 };
+
+int main() {
+	Application app;
+
+	try {
+		app.Run();
+	}
+	catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}

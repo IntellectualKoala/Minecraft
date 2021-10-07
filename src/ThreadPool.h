@@ -17,5 +17,8 @@ public:
 	void Reset();
 	void Stop();
 	std::future<void> Enqueue(std::function<void()>&& job);
-	bool IsBusy();
+
+	inline bool IsBusy() {
+		return !m_Tasks.empty();
+	}
 };

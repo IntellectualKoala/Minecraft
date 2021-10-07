@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "pch.h"
 
 #define BLOCK_TYPES(X) \
     X(Air, BLOCK_DATA_TRANSPERENT_BIT)   \

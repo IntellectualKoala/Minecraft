@@ -71,7 +71,3 @@ std::future<void> ThreadPool::Enqueue(std::function<void()>&& job) {
 	m_Condition.notify_one();
 	return future;
 }
-
-bool ThreadPool::IsBusy() {
-	return !m_Tasks.empty();
-}

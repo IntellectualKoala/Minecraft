@@ -4,7 +4,6 @@
 Chunk::Chunk()
 	: m_State(ChunkState::Ungenerated)
 {
-
 }
 
 void Chunk::Generate() {

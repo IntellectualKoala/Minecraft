@@ -1,24 +1,5 @@
 #pragma once
 
-#define _USE_MATH_DEFINES
-#include <cmath>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <algorithm>
-#include <chrono>
-#include <vector>
-#include <cstring>
-#include <cstdlib>
-#include <cstdint>
-#include <array>
-#include <optional>
-#include <set>
-#include <mutex>
-#include <queue>
-#include <future>
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -27,3 +8,25 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
+
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <stdexcept>
+#include <algorithm>
+#include <chrono>
+#include <mutex>
+#include <condition_variable>
+#include <future>
+#include <vector>
+#include <queue>
+#include <utility>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
+#include <array>
+#include <optional>
+#include <set>
+#include <unordered_map>

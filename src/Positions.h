@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "pch.h"
 
 typedef glm::vec3 WorldPosition;
 typedef glm::vec2 WorldPosition2D;
