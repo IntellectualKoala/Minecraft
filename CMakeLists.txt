@@ -31,6 +31,8 @@ file(GLOB_RECURSE SHADER_FILES
     res/shaders/*.frag
     res/shaders/*.comp)
 
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/res/shaders/)
+
 foreach(SHADER_PATH ${SHADER_FILES})
     get_filename_component(SHADER ${SHADER_PATH} NAME)
     set(SHADER_OUTPUT_PATH ${CMAKE_BINARY_DIR}/res/shaders/${SHADER}.spv)
