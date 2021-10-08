@@ -139,6 +139,9 @@ private:
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 		m_Window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr);
+		auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		glfwSetWindowPos(m_Window, (mode->width - WIDTH) / 2, (mode->height - HEIGHT) / 2);
+
 		glfwSetWindowUserPointer(m_Window, this);
 		glfwSetFramebufferSizeCallback(m_Window, FramebufferResizeCallback);
 
