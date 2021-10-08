@@ -6,6 +6,7 @@
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+const char* TITLE = "Minecraft";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -130,47 +131,43 @@ private:
 
 	bool m_FramebufferResized = false;
 
-	World m_World = World(24);
+	std::unique_ptr<World> m_World;
 
 	void InitWindow() {
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+		m_Window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr);
 		glfwSetWindowUserPointer(m_Window, this);
 		glfwSetFramebufferSizeCallback(m_Window, FramebufferResizeCallback);
 
 		glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		glfwSetInputMode(m_Window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* m_Window, double xpos, double ypos)
 		{
-			auto game = static_cast<Application*>(glfwGetWindowUserPointer(m_Window));
+			auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(m_Window));
 
-			static float lastX = static_cast<float>(xpos), lastY = static_cast<float>(ypos);
-			static float pitch = glm::degrees(glm::asin(game->m_Camera.front.y)),
-				yaw = glm::degrees(glm::atan(game->m_Camera.front.z, game->m_Camera.front.x));
+			static float lastX = (float)xpos, lastY = (float)ypos;
+			static float pitch = glm::degrees(glm::asin(app->m_Camera.front.y)),
+				yaw = glm::degrees(glm::atan(app->m_Camera.front.z, app->m_Camera.front.x));
 
-			float xoffset = static_cast<float>(xpos - lastX);
-			float yoffset = static_cast<float>(lastY - ypos);
-			lastX = static_cast<float>(xpos);
-			lastY = static_cast<float>(ypos);
+			float xoffset = (float)(xpos - lastX);
+			float yoffset = (float)(lastY - ypos);
+			lastX = (float)xpos;
+			lastY = (float)ypos;
 
-			xoffset *= game->m_Camera.sensitivity;
-			yoffset *= game->m_Camera.sensitivity;
+			xoffset *= app->m_Camera.sensitivity;
+			yoffset *= app->m_Camera.sensitivity;
 
 			yaw += xoffset;
-
-			if (yaw < 0)
-				yaw += 360;
-			if (yaw > 360)
-				yaw = 0;
-
 			pitch += yoffset;
 
+			yaw = fmodf(yaw, 360);
 			pitch = glm::clamp(pitch, -89.9f, 89.9f);
 
-			game->m_Camera.front = glm::normalize(glm::vec3{
+			app->m_Camera.front = glm::normalize(glm::vec3{
 				cos(glm::radians(yaw)) * cos(glm::radians(pitch)),
 				sin(glm::radians(pitch)),
 				sin(glm::radians(yaw)) * cos(glm::radians(pitch))
@@ -200,8 +197,10 @@ private:
 		CreateFramebuffers();
 		CreateCommandPool();
 
-		m_World.Generate(PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position));
-		m_World.Update([&](const ChunkMesh& mesh) {
+		m_World = std::make_unique<World>(24);
+
+		m_World->Generate(PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position));
+		m_World->Update([&](const ChunkMesh& mesh) {
 			CreateVertexBuffer<ChunkVertex>(mesh.first);
 			CreateIndexBuffer(mesh.second);
 		});
@@ -223,12 +222,12 @@ private:
 			lastTime = currentTime;
 
 			fpsTimeAccumulator += deltaTime;
-			nbFrames++;
+			++nbFrames;
 			if (fpsTimeAccumulator >= 1.0) {
-				fps = static_cast<double>(nbFrames / fpsTimeAccumulator);
+				fps = nbFrames / fpsTimeAccumulator;
 
 				std::stringstream ss;
-				ss << "Vulkan: " << fps << "fps";
+				ss << TITLE << ": " << fps << "fps";
 
 				glfwSetWindowTitle(m_Window, ss.str().c_str());
 
@@ -242,6 +241,30 @@ private:
 		}
 
 		vkDeviceWaitIdle(m_Device);
+	}
+
+	void HandleInput(double deltaTime) {
+		float speed = (float)(10.0f * deltaTime);
+
+		glm::vec3 front = glm::normalize(glm::vec3(m_Camera.front.x, 0.0f, m_Camera.front.z));
+
+		if (glfwGetKey(m_Window, GLFW_KEY_W) == GLFW_PRESS)
+			m_Camera.position += front * speed;
+
+		if (glfwGetKey(m_Window, GLFW_KEY_S) == GLFW_PRESS)
+			m_Camera.position -= front * speed;
+
+		if (glfwGetKey(m_Window, GLFW_KEY_A) == GLFW_PRESS)
+			m_Camera.position -= glm::normalize(glm::cross(front, m_Camera.up)) * speed;
+
+		if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS)
+			m_Camera.position += glm::normalize(glm::cross(front, m_Camera.up)) * speed;
+
+		if (glfwGetKey(m_Window, GLFW_KEY_SPACE) == GLFW_PRESS)
+			m_Camera.position += m_Camera.up * speed;
+
+		if (glfwGetKey(m_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+			m_Camera.position -= m_Camera.up * speed;
 	}
 
 	void CleanupSwapChain() {
@@ -1154,9 +1177,9 @@ private:
 	}
 
 	void UpdateUniformBuffer(uint32_t currentImage) {
-		/*static auto startTime = std::chrono::high_resolution_clock::now();
+		/*static auto startTime = std::chrono::steady_clock::now();
 
-		auto currentTime = std::chrono::high_resolution_clock::now();
+		auto currentTime = std::chrono::steady_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();*/
 
 		UniformBufferObject ubo{};
@@ -1441,30 +1464,6 @@ private:
 		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 		return VK_FALSE;
-	}
-
-	void HandleInput(float deltaTime) {
-		float speed = 10.0f * deltaTime;
-
-		glm::vec3 front = glm::normalize(glm::vec3(m_Camera.front.x, 0.0f, m_Camera.front.z));
-
-		if (glfwGetKey(m_Window, GLFW_KEY_W) == GLFW_PRESS)
-			m_Camera.position += front * speed;
-
-		if (glfwGetKey(m_Window, GLFW_KEY_S) == GLFW_PRESS)
-			m_Camera.position -= front * speed;
-
-		if (glfwGetKey(m_Window, GLFW_KEY_A) == GLFW_PRESS)
-			m_Camera.position -= glm::normalize(glm::cross(front, m_Camera.up)) * speed;
-
-		if (glfwGetKey(m_Window, GLFW_KEY_D) == GLFW_PRESS)
-			m_Camera.position += glm::normalize(glm::cross(front, m_Camera.up)) * speed;
-
-		if (glfwGetKey(m_Window, GLFW_KEY_SPACE) == GLFW_PRESS)
-			m_Camera.position += m_Camera.up * speed;
-
-		if (glfwGetKey(m_Window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-			m_Camera.position -= m_Camera.up * speed;
 	}
 };
 
