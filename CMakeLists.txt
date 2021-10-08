@@ -14,16 +14,14 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SRC_FILES})
 find_package(Vulkan REQUIRED)
 
 add_subdirectory(deps/glfw)
-add_subdirectory(deps/glad)
 add_subdirectory(deps/glm)
 
 add_executable(Minecraft ${SRC_FILES})
 
-target_link_libraries(Minecraft PUBLIC glfw glad glm Vulkan::Vulkan)
+target_link_libraries(Minecraft PUBLIC glfw glm Vulkan::Vulkan)
 
 target_include_directories(Minecraft PUBLIC
                           deps/glfw
-                          deps/glad
                           deps/glm)
 
 find_program(GLSLC glslc REQUIRED)
