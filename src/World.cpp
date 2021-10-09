@@ -8,25 +8,28 @@ World::World(unsigned int radius)
 }
 
 void World::Refresh(const ChunkLocation& origin) {
-	Prune(origin);
 	m_ThreadPool.Reset();
+	Prune(origin);
 	Generate(origin);
 }
 
 void World::Generate(const ChunkLocation& origin) {
 	auto loop = [&](auto code) {
-		// This is temporary
-		static const int worldWidth = 10;
-		static const int worldHeight = 10;
+		const int xMax = origin.x + m_Radius;
+		const int zMax = origin.y + m_Radius;
+		const int xMin = origin.x - m_Radius;
+		const int zMin = origin.y - m_Radius;
 
 		std::vector<std::future<void>> futures;
 
-		for (int x = 0; x < worldWidth; ++x) {
-			for (int z = 0; z < worldHeight; ++z) {
-				futures.emplace_back(m_ThreadPool.Enqueue([&, x, z]
-				{
-					code({ x, z });
-				}));
+		for (int x = xMin; x <= xMax; ++x) {
+			for (int z = zMin; z <= zMax; ++z) {
+				if (sqrt(pow(origin.x - x, 2) + pow(origin.y - z, 2)) <= m_Radius) {
+					futures.emplace_back(m_ThreadPool.Enqueue([&, x, z]
+					{
+						code({ x, z });
+					}));
+				}
 			}
 		}
 
@@ -52,11 +55,11 @@ void World::Generate(const ChunkLocation& origin) {
 
 void World::Prune(const ChunkLocation& origin) {
 	for (auto it = m_Chunks.begin(); it != m_Chunks.end(); ++it)
-		if (sqrt(pow(origin.x - it->first.x, 2) + pow(origin.y - it->first.y, 2)) > m_Radius)
+		if (sqrt(pow(origin.x - it->first.x, 2) + pow(origin.y - it->first.y, 2)) > m_Radius * m_Radius)
 			it->second.SetRemoved();
 }
 
-void World::Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc) {
+void World::Update() {
 	auto it = m_Chunks.begin();
 	while (it != m_Chunks.end())
 	{
@@ -65,11 +68,12 @@ void World::Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc) 
 		case ChunkState::Removed:
 			{
 				std::lock_guard<std::mutex> lock(m_Mutex);
-				m_Chunks.erase(it);
+				it = m_Chunks.erase(it);
+				// TODO: Remove unused mesh data from RAM/VRAM
 			}
 			continue;
 		case ChunkState::GeneratedMesh:
-			it->second.BufferMesh(meshBufferFunc);
+			it->second.BufferMesh();
 		default:
 			break;
 		}

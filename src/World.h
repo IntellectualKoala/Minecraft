@@ -27,7 +27,7 @@ public:
 	void Generate(const ChunkLocation& origin);
 	void Prune(const ChunkLocation& origin);
 
-	void Update(const std::function<void(const ChunkMesh&)>& meshBufferFunc);
+	void Update();
 
 	void SetChunk(const ChunkLocation& location, Chunk&& chunk);
 	Chunk& GetChunk(const ChunkLocation& location);

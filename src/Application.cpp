@@ -57,7 +57,6 @@ struct SwapChainSupportDetails {
 };
 
 struct UniformBufferObject {
-	alignas(16) glm::mat4 model;
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 proj;
 };
@@ -67,8 +66,16 @@ public:
 	void Run() {
 		InitWindow();
 		InitVulkan();
+		InitWorld();
 		MainLoop();
 		Cleanup();
+	}
+
+	template<typename T>
+	void BufferMesh(std::vector<T> vertices, std::vector<uint32_t> indices) {
+		CreateVertexBuffer<ChunkVertex>(vertices);
+		CreateIndexBuffer(indices);
+		m_DoUpdateRenderData = true;
 	}
 
 	Camera m_Camera;
@@ -130,6 +137,7 @@ private:
 	size_t m_CurrentFrame = 0;
 
 	bool m_FramebufferResized = false;
+	bool m_DoUpdateRenderData = true;
 
 	std::unique_ptr<World> m_World;
 
@@ -152,14 +160,14 @@ private:
 		{
 			auto app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(m_Window));
 
-			static float lastX = (float)xpos, lastY = (float)ypos;
+			static float prevX = (float)xpos, prevY = (float)ypos;
 			static float pitch = glm::degrees(glm::asin(app->m_Camera.front.y)),
 				yaw = glm::degrees(glm::atan(app->m_Camera.front.z, app->m_Camera.front.x));
 
-			float xoffset = (float)(xpos - lastX);
-			float yoffset = (float)(lastY - ypos);
-			lastX = (float)xpos;
-			lastY = (float)ypos;
+			float xoffset = (float)(xpos - prevX);
+			float yoffset = (float)(prevY - ypos);
+			prevX = (float)xpos;
+			prevY = (float)ypos;
 
 			xoffset *= app->m_Camera.sensitivity;
 			yoffset *= app->m_Camera.sensitivity;
@@ -199,15 +207,15 @@ private:
 		CreateDepthResources();
 		CreateFramebuffers();
 		CreateCommandPool();
+	}
 
-		m_World = std::make_unique<World>(24);
-
+	void InitWorld() {
+		m_World = std::make_unique<World>(2);
 		m_World->Generate(PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position));
-		m_World->Update([&](const ChunkMesh& mesh) {
-			CreateVertexBuffer<ChunkVertex>(mesh.first);
-			CreateIndexBuffer(mesh.second);
-		});
+		UpdateRenderData();
+	}
 
+	void UpdateRenderData() {
 		CreateUniformBuffers();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
@@ -217,12 +225,12 @@ private:
 
 	void MainLoop() {
 		while (!glfwWindowShouldClose(m_Window)) {
-			static double lastTime = 0, fpsTimeAccumulator = 0, fps = 0;
+			static double prevTime = 0, fpsTimeAccumulator = 0, fps = 0;
 			static int nbFrames = 0;
 
 			double currentTime = glfwGetTime();
-			double deltaTime = currentTime - lastTime;
-			lastTime = currentTime;
+			double deltaTime = currentTime - prevTime;
+			prevTime = currentTime;
 
 			fpsTimeAccumulator += deltaTime;
 			++nbFrames;
@@ -238,12 +246,33 @@ private:
 				fpsTimeAccumulator = 0;
 			}
 
-			glfwPollEvents();
-			HandleInput(deltaTime);
+			Update(deltaTime);
 			DrawFrame();
 		}
 
 		vkDeviceWaitIdle(m_Device);
+	}
+
+	void Update(double deltaTime) {
+		glfwPollEvents();
+
+		HandleInput(deltaTime);
+
+		auto chunkLocation = PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position);
+		static auto prevChunkLocation = chunkLocation;
+
+		if (chunkLocation != prevChunkLocation) {
+			m_World->Refresh(chunkLocation);
+			prevChunkLocation = chunkLocation;
+		}
+		
+		m_World->Update();
+
+		if (m_DoUpdateRenderData)
+		{
+			UpdateRenderData();
+			m_DoUpdateRenderData = false;
+		}
 	}
 
 	void HandleInput(double deltaTime) {
@@ -1180,16 +1209,9 @@ private:
 	}
 
 	void UpdateUniformBuffer(uint32_t currentImage) {
-		/*static auto startTime = std::chrono::steady_clock::now();
-
-		auto currentTime = std::chrono::steady_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();*/
-
 		UniformBufferObject ubo{};
-		//ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.model = glm::mat4(1.0f);
 		ubo.view = glm::lookAt(m_Camera.position, m_Camera.position + m_Camera.front, m_Camera.up);
-		ubo.proj = glm::perspective(glm::radians(45.0f), m_SwapChainExtent.width / (float)m_SwapChainExtent.height, 0.1f, 1000.0f);
+		ubo.proj = glm::perspective(glm::radians(m_Camera.fov), m_SwapChainExtent.width / (float)m_SwapChainExtent.height, 0.1f, 10000.0f);
 		ubo.proj[1][1] *= -1;
 
 		void* data;
@@ -1470,16 +1492,24 @@ private:
 	}
 };
 
+static Application* s_Application;
+
+void BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices)
+{
+	s_Application->BufferMesh<ChunkVertex>(vertices, indices);
+}
+
 int main() {
-	Application app;
+	s_Application = new Application();
 
 	try {
-		app.Run();
+		s_Application->Run();
 	}
 	catch (const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 
+	delete s_Application;
 	return EXIT_SUCCESS;
 }

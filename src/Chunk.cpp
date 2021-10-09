@@ -25,6 +25,7 @@ void Chunk::GenerateMesh(ChunkLocation location) {
 	uint16_t y = 50;
 	for (uint8_t x = 0; x < 16; ++x) {
 		for (uint8_t z = 0; z < 16; ++z) {
+			// This is temporary
 			m_Mesh.first.emplace_back(ChunkVertex{ { location.x + x, y, location.y + z + 1.0f } });
 			m_Mesh.first.emplace_back(ChunkVertex{ { location.x + x, y, location.y + z } });
 			m_Mesh.first.emplace_back(ChunkVertex{ { location.x + x + 1.0f, y, location.y + z } });
@@ -44,8 +45,8 @@ void Chunk::GenerateMesh(ChunkLocation location) {
 	m_State = ChunkState::GeneratedMesh;
 }
 
-void Chunk::BufferMesh(const std::function<void(const ChunkMesh&)>& meshBufferFunc) {
-	meshBufferFunc(m_Mesh);
+void Chunk::BufferMesh() {
+	::BufferMesh(m_Mesh.first, m_Mesh.second);
 
 	m_State = ChunkState::Buffered;
 

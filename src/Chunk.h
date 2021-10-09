@@ -36,6 +36,8 @@ enum class ChunkState : uint8_t {
 	Removed
 };
 
+void BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices);
+
 class Chunk {
 private:
 	std::vector<Block> m_Blocks;
@@ -58,7 +60,7 @@ public:
 
 	void Generate();
 	void GenerateMesh(ChunkLocation location);
-	void BufferMesh(const std::function<void(const ChunkMesh&)>& meshBufferFunc);
+	void BufferMesh();
 
 	void SetBlock(const ChunkPosition& position, const Block& block);
 	const Block* GetBlock(const ChunkPosition& position) const;
