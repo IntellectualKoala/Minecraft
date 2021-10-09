@@ -11,7 +11,7 @@ It is currently very bare-bones.
 * Etc.
 
 ## How to build
-1. Make sure the Vulkan SDK is installed.
+1. Make sure the Vulkan SDK is installed. ([You can get the SDK here](https://vulkan.lunarg.com/))
 2. Clone the repository with git (make sure to use the --recursive flag to initialize the submodules)
 3. Build with cmake however you like.
 
