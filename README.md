@@ -18,7 +18,7 @@ It is currently very bare-bones.
 Your commands should look roughly like this:
 ```
 git clone https://github.com/IntellectualKoala/Minecraft --recursive
-cmake -S Minecraft -B Minecraft/build
+cmake Minecraft -B Minecraft/build
 ```
 
 Note: Make sure the compiled `res` folder is in your executable's working directory, otherwise the binary won't be able to locate the resources.
