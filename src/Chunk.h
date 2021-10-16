@@ -27,16 +27,22 @@ struct ChunkVertex {
 	}
 };
 
-typedef std::pair<std::vector<ChunkVertex>, std::vector<uint32_t>> ChunkMesh;
+struct ChunkMesh {
+	unsigned int id;
+	std::vector<ChunkVertex> vertices;
+	std::vector<uint32_t> indices;
+};
 
 enum class ChunkState : uint8_t {
 	Ungenerated,
+	Generated,
 	GeneratedMesh,
 	Buffered,
 	Removed
 };
 
-void BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices);
+unsigned int BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices);
+void DeleteMesh(unsigned int id);
 
 class Chunk {
 private:
@@ -61,6 +67,7 @@ public:
 	void Generate();
 	void GenerateMesh(ChunkLocation location);
 	void BufferMesh();
+	void DeleteMesh();
 
 	void SetBlock(const ChunkPosition& position, const Block& block);
 	const Block* GetBlock(const ChunkPosition& position) const;

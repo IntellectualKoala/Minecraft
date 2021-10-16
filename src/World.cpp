@@ -25,7 +25,7 @@ void World::Generate(const ChunkLocation& origin) {
 		for (int x = xMin; x <= xMax; ++x) {
 			for (int z = zMin; z <= zMax; ++z) {
 				if (sqrt(pow(origin.x - x, 2) + pow(origin.y - z, 2)) <= m_Radius) {
-					futures.emplace_back(m_ThreadPool.Enqueue([&, x, z]
+					futures.emplace_back(m_ThreadPool.Enqueue([code, x, z]
 					{
 						code({ x, z });
 					}));
@@ -40,8 +40,11 @@ void World::Generate(const ChunkLocation& origin) {
 	m_GenState = WorldGenerationState::GeneratingBlocks;
 
 	loop([&](const ChunkLocation& location) {
-		SetChunk(location, Chunk());
-		GetChunk(location).Generate(/* location */);
+		if (m_Chunks.find(location) == m_Chunks.end()) {
+			Chunk chunk;
+			chunk.Generate(/* location */);
+			SetChunk(location, std::move(chunk));
+		}
 	});
 
 	m_GenState = WorldGenerationState::GeneratingMeshes;
@@ -55,7 +58,7 @@ void World::Generate(const ChunkLocation& origin) {
 
 void World::Prune(const ChunkLocation& origin) {
 	for (auto it = m_Chunks.begin(); it != m_Chunks.end(); ++it)
-		if (sqrt(pow(origin.x - it->first.x, 2) + pow(origin.y - it->first.y, 2)) > m_Radius * m_Radius)
+		if (sqrt(pow(origin.x - it->first.x, 2) + pow(origin.y - it->first.y, 2)) > m_Radius)
 			it->second.SetRemoved();
 }
 
@@ -68,8 +71,8 @@ void World::Update() {
 		case ChunkState::Removed:
 			{
 				std::lock_guard<std::mutex> lock(m_Mutex);
+				it->second.DeleteMesh();
 				it = m_Chunks.erase(it);
-				// TODO: Remove unused mesh data from RAM/VRAM
 			}
 			continue;
 		case ChunkState::GeneratedMesh:

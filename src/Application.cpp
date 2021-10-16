@@ -1,12 +1,13 @@
 #include "pch.h"
 
+#include "Core.h"
+
 #include "Camera.h"
 #include "Chunk.h"
 #include "World.h"
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
-const char* TITLE = "Minecraft";
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -61,9 +62,28 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 proj;
 };
 
+struct DeletionQueue
+{
+	std::deque<std::function<void()>> deletors;
+
+	void Push(std::function<void()>&& function) {
+		deletors.emplace_back(function);
+	}
+
+	void Flush() {
+		for (auto it = deletors.rbegin(); it != deletors.rend(); it++)
+			(*it)();
+
+		deletors.clear();
+	}
+};
+
 class Application {
 public:
+	Camera m_Camera;
+
 	void Run() {
+		::Log::Init();
 		InitWindow();
 		InitVulkan();
 		InitWorld();
@@ -72,13 +92,31 @@ public:
 	}
 
 	template<typename T>
-	void BufferMesh(std::vector<T> vertices, std::vector<uint32_t> indices) {
-		CreateVertexBuffer<ChunkVertex>(vertices);
-		CreateIndexBuffer(indices);
+	unsigned int BufferMesh(std::vector<T> vertices, std::vector<uint32_t> indices) {
+		unsigned int id = nextID;
+
+		CreateVertexBuffer<ChunkVertex>(id, vertices);
+		CreateIndexBuffer(id, indices);
+
+		++totalIDs;
+		nextID = totalIDs;
+
 		m_DoUpdateRenderData = true;
+
+		return id;
 	}
 
-	Camera m_Camera;
+	void DeleteMesh(unsigned int id) {
+		auto& meshObject = m_MeshObjects[id];
+
+		m_DeletionQueue.Push([=]() mutable {
+			meshObject.Destroy(m_Device);
+			m_MeshObjects.erase(id);
+			nextID = id;
+		});
+
+		m_DoUpdateRenderData = true;
+	}
 
 private:
 	GLFWwindow* m_Window;
@@ -116,11 +154,26 @@ private:
 	VkDeviceMemory m_DepthImageMemory;
 	VkImageView m_DepthImageView;
 
-	std::vector<VkBuffer> m_VertexBuffers;
-	VkDeviceMemory m_VertexBufferMemory;
-	std::vector<VkBuffer> m_IndexBuffers;
-	VkDeviceMemory m_IndexBufferMemory;
-	std::vector<uint32_t> m_IndexBufferSizes;
+	unsigned int nextID = 0;
+	unsigned int totalIDs = 0;
+
+	struct MeshObject {
+		VkBuffer vertexBuffer;
+		VkBuffer indexBuffer;
+		VkDeviceMemory vertexBufferMemory;
+		VkDeviceMemory indexBufferMemory;
+		unsigned int indexBufferSize;
+
+		void Destroy(VkDevice& device) {
+			vkDestroyBuffer(device, vertexBuffer, nullptr);
+			vkDestroyBuffer(device, indexBuffer, nullptr);
+			vkFreeMemory(device, vertexBufferMemory, nullptr);
+			vkFreeMemory(device, indexBufferMemory, nullptr);
+		}
+	};
+
+	std::unordered_map<unsigned int, MeshObject> m_MeshObjects;
+	DeletionQueue m_DeletionQueue;
 
 	std::vector<VkBuffer> m_UniformBuffers;
 	std::vector<VkDeviceMemory> m_UniformBuffersMemory;
@@ -146,7 +199,7 @@ private:
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		m_Window = glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr);
+		m_Window = glfwCreateWindow(WIDTH, HEIGHT, APP_TITLE, nullptr, nullptr);
 		auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		glfwSetWindowPos(m_Window, (mode->width - WIDTH) / 2, (mode->height - HEIGHT) / 2);
 
@@ -206,7 +259,10 @@ private:
 		CreateColorResources();
 		CreateDepthResources();
 		CreateFramebuffers();
-		CreateCommandPool();
+		CreateUniformBuffers();
+		CreateDescriptorPool();
+		CreateDescriptorSets();
+		CreateSyncObjects();
 	}
 
 	void InitWorld() {
@@ -216,11 +272,7 @@ private:
 	}
 
 	void UpdateRenderData() {
-		CreateUniformBuffers();
-		CreateDescriptorPool();
-		CreateDescriptorSets();
 		CreateCommandBuffers();
-		CreateSyncObjects();
 	}
 
 	void MainLoop() {
@@ -238,7 +290,7 @@ private:
 				fps = nbFrames / fpsTimeAccumulator;
 
 				std::stringstream ss;
-				ss << TITLE << ": " << fps << "fps";
+				ss << APP_TITLE << ": " << fps << "fps";
 
 				glfwSetWindowTitle(m_Window, ss.str().c_str());
 
@@ -247,6 +299,7 @@ private:
 			}
 
 			Update(deltaTime);
+
 			DrawFrame();
 		}
 
@@ -270,6 +323,7 @@ private:
 
 		if (m_DoUpdateRenderData)
 		{
+			m_DeletionQueue.Flush();
 			UpdateRenderData();
 			m_DoUpdateRenderData = false;
 		}
@@ -300,6 +354,10 @@ private:
 	}
 
 	void CleanupSwapChain() {
+		vkDestroyImageView(m_Device, m_DepthImageView, nullptr);
+		vkDestroyImage(m_Device, m_DepthImage, nullptr);
+		vkFreeMemory(m_Device, m_DepthImageMemory, nullptr);
+
 		vkDestroyImageView(m_Device, m_ColorImageView, nullptr);
 		vkDestroyImage(m_Device, m_ColorImage, nullptr);
 		vkFreeMemory(m_Device, m_ColorImageMemory, nullptr);
@@ -333,13 +391,11 @@ private:
 
 		vkDestroyDescriptorSetLayout(m_Device, m_DescriptorSetLayout, nullptr);
 
-		for (auto& indexBuffer : m_IndexBuffers)
-			vkDestroyBuffer(m_Device, indexBuffer, nullptr);
-		vkFreeMemory(m_Device, m_IndexBufferMemory, nullptr);
+		m_DeletionQueue.Flush();
 
-		for (auto& vertexBuffer : m_VertexBuffers)
-			vkDestroyBuffer(m_Device, vertexBuffer, nullptr);
-		vkFreeMemory(m_Device, m_VertexBufferMemory, nullptr);
+		for (auto& meshObjectElement : m_MeshObjects) {
+			meshObjectElement.second.Destroy(m_Device);
+		}
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 			vkDestroySemaphore(m_Device, m_RenderFinishedSemaphores[i], nullptr);
@@ -955,8 +1011,9 @@ private:
 	}
 
 	template<typename T>
-	void CreateVertexBuffer(std::vector<T> vertices) {
-		auto& vertexBuffer = m_VertexBuffers.emplace_back();
+	void CreateVertexBuffer(unsigned int id, std::vector<T> vertices) {
+		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
+		auto& vertexBuffer = meshObject.vertexBuffer;
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
 		VkBuffer stagingBuffer;
@@ -968,7 +1025,7 @@ private:
 		memcpy(data, vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device, stagingBufferMemory);
 
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, m_VertexBufferMemory);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, meshObject.vertexBufferMemory);
 
 		CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
@@ -976,9 +1033,10 @@ private:
 		vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 	}
 
-	void CreateIndexBuffer(std::vector<uint32_t> indices) {
-		auto& indexBuffer = m_IndexBuffers.emplace_back();
-		m_IndexBufferSizes.emplace_back(static_cast<uint32_t>(indices.size()));
+	void CreateIndexBuffer(unsigned int id, std::vector<uint32_t> indices) {
+		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
+		auto& indexBuffer = meshObject.indexBuffer;
+		meshObject.indexBufferSize = static_cast<uint32_t>(indices.size());
 		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
 		VkBuffer stagingBuffer;
@@ -990,7 +1048,7 @@ private:
 		memcpy(data, indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device, stagingBufferMemory);
 
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, m_IndexBufferMemory);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, meshObject.indexBufferMemory);
 
 		CopyBuffer(stagingBuffer, indexBuffer, bufferSize);
 
@@ -1171,13 +1229,13 @@ private:
 			vkCmdBindDescriptorSets(m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 1, &m_DescriptorSets[i], 0, nullptr);
 
 			VkDeviceSize offsets[] = { 0 };
-			for (size_t j = 0; j < m_VertexBuffers.size(); ++j) {
-				vkCmdBindVertexBuffers(m_CommandBuffers[i], 0, 1, &m_VertexBuffers[j], offsets);
-				vkCmdBindIndexBuffer(m_CommandBuffers[i], m_IndexBuffers[j], 0, VK_INDEX_TYPE_UINT32);
+			for (auto& meshObjectElement : m_MeshObjects) {
+				vkCmdBindVertexBuffers(m_CommandBuffers[i], 0, 1, &meshObjectElement.second.vertexBuffer, offsets);
+				vkCmdBindIndexBuffer(m_CommandBuffers[i], meshObjectElement.second.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-				vkCmdDrawIndexed(m_CommandBuffers[i], m_IndexBufferSizes[j], 1, 0, 0, 0);
+				vkCmdDrawIndexed(m_CommandBuffers[i], meshObjectElement.second.indexBufferSize, 1, 0, 0, 0);
 			}
-
+			
 			vkCmdEndRenderPass(m_CommandBuffers[i]);
 
 			if (vkEndCommandBuffer(m_CommandBuffers[i]) != VK_SUCCESS) {
@@ -1467,14 +1525,14 @@ private:
 		return true;
 	}
 
-	static std::vector<char> ReadFile(const std::string& filename) {
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+	static std::vector<char> ReadFile(const std::string& filepath) {
+		std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open()) {
-			throw std::runtime_error("failed to open file!");
+			throw std::runtime_error("failed to open file: " + filepath);
 		}
 
-		size_t fileSize = (size_t)file.tellg();
+		size_t fileSize = static_cast<size_t>(file.tellg());
 		std::vector<char> buffer(fileSize);
 
 		file.seekg(0);
@@ -1486,7 +1544,20 @@ private:
 	}
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		switch (messageSeverity) {
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+			LOG_INFO(pCallbackData->pMessage);
+			break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+			LOG_ERROR(pCallbackData->pMessage);
+			break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+			LOG_WARN(pCallbackData->pMessage);
+			break;
+		default:
+			break;
+		}
 
 		return VK_FALSE;
 	}
@@ -1494,9 +1565,12 @@ private:
 
 static Application* s_Application;
 
-void BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices)
-{
-	s_Application->BufferMesh<ChunkVertex>(vertices, indices);
+unsigned int BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices) {
+	return s_Application->BufferMesh<ChunkVertex>(vertices, indices);
+}
+
+void DeleteMesh(unsigned int id) {
+	s_Application->DeleteMesh(id);
 }
 
 int main() {

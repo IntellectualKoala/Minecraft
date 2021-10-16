@@ -15,14 +15,18 @@ find_package(Vulkan REQUIRED)
 
 add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
+add_subdirectory(deps/spdlog)
 
 add_executable(Minecraft ${SRC_FILES})
 
 target_link_libraries(Minecraft PUBLIC glfw glm Vulkan::Vulkan)
 
 target_include_directories(Minecraft PUBLIC
-                          deps/glfw
-                          deps/glm)
+                          deps/glfw/include
+                          deps/glm/include
+                          deps/PerlinNoise
+                          deps/spdlog/include
+                          deps/stb_image)
 
 find_program(GLSLC glslc REQUIRED)
 
