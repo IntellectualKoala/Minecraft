@@ -16,7 +16,7 @@ void ThreadPool::Start(unsigned int threads) {
 				std::packaged_task<void()> job;
 
 				{
-					std::unique_lock lock(m_Mutex);
+					std::unique_lock<std::mutex> lock(m_Mutex);
 
 					m_Condition.wait(lock, [&] {
 						return (!m_Tasks.empty() || m_Terminate);
@@ -64,7 +64,7 @@ std::future<void> ThreadPool::Enqueue(std::function<void()>&& job) {
 	auto future = task.get_future();
 
 	{
-		std::lock_guard lock(m_Mutex);
+		std::lock_guard<std::mutex> lock(m_Mutex);
 		m_Tasks.emplace(std::move(task));
 	}
 

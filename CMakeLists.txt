@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 project(Minecraft VERSION 1.0)
+
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Minecraft)
 
@@ -18,6 +20,12 @@ add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
 
 add_executable(Minecraft ${SRC_FILES})
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    target_compile_options(Minecraft PUBLIC "/std:c++17")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(Minecraft PUBLIC "-std=c++17")
+endif()
 
 target_link_libraries(Minecraft PUBLIC glfw glm Vulkan::Vulkan)
 
