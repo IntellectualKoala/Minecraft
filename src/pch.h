@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <chrono>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <future>
 #include <vector>

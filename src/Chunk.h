@@ -3,6 +3,71 @@
 #include "Positions.h"
 #include "Block.h"
 
+class World;
+
+struct BlockFaceData
+{
+	struct Vertex
+	{
+		glm::vec3 position,
+			perpendicularNormal1,
+			perpendicularNormal2;
+
+		glm::vec2 texcoords;
+	};
+
+	std::array<Vertex, 4> vertices;
+	glm::vec3 normal;
+};
+
+static inline constexpr BlockFaceData FRONT_BLOCK_FACE_DATA = {
+	glm::vec3 { 0.0f, 1.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 0.0f, 0.0f, 1.0f }
+};
+
+static inline constexpr BlockFaceData BACK_BLOCK_FACE_DATA = {
+	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 0.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 0.0f, 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { 0.0f, 0.0f, -1.0f }
+};
+
+static inline constexpr BlockFaceData LEFT_BLOCK_FACE_DATA = {
+	glm::vec3 { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { -1.0f, 0.0f, 0.0f }
+};
+
+static inline constexpr BlockFaceData RIGHT_BLOCK_FACE_DATA = {
+	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 1.0f, 0.0f, 0.0f }
+};
+
+static inline constexpr BlockFaceData TOP_BLOCK_FACE_DATA = {
+	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { 0.0f, 1.0f, 0.0f }
+};
+
+static inline constexpr BlockFaceData BOTTOM_BLOCK_FACE_DATA = {
+	glm::vec3 { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
+	glm::vec3 { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	glm::vec3 { 0.0f, -1.0f, 0.0f }
+};
+
 struct ChunkVertex {
 	glm::vec3 pos;
 
@@ -27,7 +92,7 @@ struct ChunkVertex {
 	}
 };
 
-struct ChunkMesh {
+struct ChunkMeshBuilder {
 	unsigned int id;
 	std::vector<ChunkVertex> vertices;
 	std::vector<uint32_t> indices;
@@ -41,13 +106,13 @@ enum class ChunkState : uint8_t {
 	Removed
 };
 
-unsigned int BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices);
+unsigned int BufferMesh(const std::vector<ChunkVertex>&& vertices, const std::vector<uint32_t>&& indices);
 void DeleteMesh(unsigned int id);
 
 class Chunk {
 private:
 	std::vector<Block> m_Blocks;
-	ChunkMesh m_Mesh;
+	ChunkMeshBuilder m_MeshBuilder;
 	ChunkState m_State;
 
 	constexpr uint16_t PositionToIndex(const ChunkPosition& position) const {
@@ -62,10 +127,24 @@ public:
 	static constexpr uint8_t CHUNK_WIDTH = 16, CHUNK_DEPTH = 16;
 	static constexpr uint16_t CHUNK_HEIGHT = 256;
 
+	bool m_Removed = false;
+
 	Chunk();
 
-	void Generate();
-	void GenerateMesh(ChunkLocation location);
+	void Generate(const siv::PerlinNoise& noise, ChunkLocation location);
+	void GenerateMesh(World* world, ChunkLocation location);
+
+	enum class BlockFace : uint8_t {
+		Front,
+		Back,
+		Left,
+		Right,
+		Top,
+		Bottom
+	};
+
+	void AddMeshFace(const BlockTypeData& blockTypeData, const BlockFace& face, const WorldPosition& position);
+
 	void BufferMesh();
 	void DeleteMesh();
 
@@ -76,7 +155,11 @@ public:
 		return m_State;
 	}
 
+	inline bool IsRemoved() {
+		return m_Removed;
+	}
+
 	inline void SetRemoved() {
-		m_State = ChunkState::Removed;
+		m_Removed = true;
 	}
 };

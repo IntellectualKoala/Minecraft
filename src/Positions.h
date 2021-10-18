@@ -2,6 +2,7 @@
 
 #include "pch.h"
 
+typedef glm::ivec3 iWorldPosition;
 typedef glm::vec3 WorldPosition;
 typedef glm::vec2 WorldPosition2D;
 typedef glm::uvec3 ChunkPosition;

@@ -92,11 +92,11 @@ public:
 	}
 
 	template<typename T>
-	unsigned int BufferMesh(std::vector<T> vertices, std::vector<uint32_t> indices) {
+	unsigned int BufferMesh(const std::vector<T>&& vertices, const std::vector<uint32_t>&& indices) {
 		unsigned int id = nextID;
 
-		CreateVertexBuffer<ChunkVertex>(id, vertices);
-		CreateIndexBuffer(id, indices);
+		CreateVertexBuffer<ChunkVertex>(id, std::move(vertices));
+		CreateIndexBuffer(id, std::move(indices));
 
 		++totalIDs;
 		nextID = totalIDs;
@@ -107,11 +107,11 @@ public:
 	}
 
 	void DeleteMesh(unsigned int id) {
-		auto& meshObject = m_MeshObjects[id];
-
-		m_DeletionQueue.Push([=]() mutable {
-			meshObject.Destroy(m_Device);
+		m_DeletionQueue.Push([&, id]() mutable {
+			m_MeshObjects.at(id).Destroy(m_Device);
 			m_MeshObjects.erase(id);
+
+			// This might not be optimal
 			nextID = id;
 		});
 
@@ -266,7 +266,7 @@ private:
 	}
 
 	void InitWorld() {
-		m_World = std::make_unique<World>(2);
+		m_World = std::make_unique<World>(32);
 		m_World->Generate(PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position));
 		UpdateRenderData();
 	}
@@ -1565,8 +1565,8 @@ private:
 
 static Application* s_Application;
 
-unsigned int BufferMesh(std::vector<ChunkVertex> vertices, std::vector<uint32_t> indices) {
-	return s_Application->BufferMesh<ChunkVertex>(vertices, indices);
+unsigned int BufferMesh(const std::vector<ChunkVertex>&& vertices, const std::vector<uint32_t>&& indices) {
+	return s_Application->BufferMesh<ChunkVertex>(std::move(vertices), std::move(indices));
 }
 
 void DeleteMesh(unsigned int id) {

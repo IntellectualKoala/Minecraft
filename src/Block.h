@@ -3,10 +3,12 @@
 #include "pch.h"
 
 #define BLOCK_TYPES(X) \
-    X(Air, BLOCK_DATA_TRANSPERENT_BIT)   \
+    X(Air, BLOCK_DATA_TRANSPERENT_BIT)	\
     X(Grass, BLOCK_DATA_SOLID_BIT)   \
     X(Dirt, BLOCK_DATA_SOLID_BIT)   \
-    X(Glass, BLOCK_DATA_SOLID_BIT | BLOCK_DATA_TRANSPERENT_BIT)
+    X(Glass, BLOCK_DATA_SOLID_BIT | BLOCK_DATA_TRANSPERENT_BIT)	\
+	X(Stone, BLOCK_DATA_SOLID_BIT)	\
+	X(Bedrock, BLOCK_DATA_SOLID_BIT)
 
 enum class BlockType : uint8_t {
 #define X(name, data) name,

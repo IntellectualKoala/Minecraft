@@ -18,9 +18,12 @@ private:
 
 	WorldGenerationState m_GenState;
 	ThreadPool m_ThreadPool;
-	std::mutex m_Mutex;
+	mutable std::shared_mutex m_Mutex;
+
+	siv::PerlinNoise m_Noise;
 
 public:
+	World(uint32_t seed, unsigned int radius);
 	World(unsigned int radius);
 
 	void Refresh(const ChunkLocation& origin);
@@ -30,11 +33,12 @@ public:
 	void Update();
 
 	void SetChunk(const ChunkLocation& location, Chunk&& chunk);
+	const Chunk* SafeGetChunk(const ChunkLocation& location) const;
 	Chunk& GetChunk(const ChunkLocation& location);
 
-	inline void UpdateRadius(unsigned int radius) {
-		m_NumChunks = M_PI * m_Radius * m_Radius;
+	inline void UpdateRadius(const ChunkLocation& origin, unsigned int radius) {
 		m_Radius = radius;
+		Refresh(origin);
 	}
 
 	inline const WorldGenerationState& GetGenState() const {
