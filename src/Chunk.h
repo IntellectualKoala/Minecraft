@@ -5,66 +5,78 @@
 
 class World;
 
+struct BlockFaceVertex
+{
+	glm::vec3 position,
+		perpendicularNormal1,
+		perpendicularNormal2;
+
+	glm::vec2 texcoords;
+};
+
 struct BlockFaceData
 {
-	struct Vertex
-	{
-		glm::vec3 position,
-			perpendicularNormal1,
-			perpendicularNormal2;
-
-		glm::vec2 texcoords;
-	};
-
-	std::array<Vertex, 4> vertices;
+	std::array<BlockFaceVertex, 4> vertices;
 	glm::vec3 normal;
 };
 
 static inline constexpr BlockFaceData FRONT_BLOCK_FACE_DATA = {
-	glm::vec3 { 0.0f, 1.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
-	glm::vec3 { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
-	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } }
+	},
 	glm::vec3 { 0.0f, 0.0f, 1.0f }
 };
 
 static inline constexpr BlockFaceData BACK_BLOCK_FACE_DATA = {
-	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
-	glm::vec3 { 0.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 0.0f, 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
-	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 0.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 0.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } }
+	},
 	glm::vec3 { 0.0f, 0.0f, -1.0f }
 };
 
 static inline constexpr BlockFaceData LEFT_BLOCK_FACE_DATA = {
-	glm::vec3 { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
-	glm::vec3 { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
-	glm::vec3 { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } }
+	},
 	glm::vec3 { -1.0f, 0.0f, 0.0f }
 };
 
 static inline constexpr BlockFaceData RIGHT_BLOCK_FACE_DATA = {
-	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
-	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
-	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 0.0f, -1.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } }
+	},
 	glm::vec3 { 1.0f, 0.0f, 0.0f }
 };
 
 static inline constexpr BlockFaceData TOP_BLOCK_FACE_DATA = {
-	glm::vec3 { 1.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
-	glm::vec3 { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 0.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
-	glm::vec3 { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 1.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 1.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } }
+	},
 	glm::vec3 { 0.0f, 1.0f, 0.0f }
 };
 
 static inline constexpr BlockFaceData BOTTOM_BLOCK_FACE_DATA = {
-	glm::vec3 { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f },
-	glm::vec3 { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f },
-	glm::vec3 { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f },
-	glm::vec3 { 1.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f },
+	{
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 0.0f } },
+		BlockFaceVertex { glm::vec3 { 0.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { -1.0f, 0.0f, 0.0f }, glm::vec2 { 1.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec3 { 0.0f, 0.0f, -1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 1.0f } },
+		BlockFaceVertex { glm::vec3 { 1.0f, 0.0f, 1.0f }, glm::vec3 { 0.0f, 0.0f, 1.0f }, glm::vec3 { 1.0f, 0.0f, 0.0f }, glm::vec2 { 0.0f, 0.0f } }
+	},
 	glm::vec3 { 0.0f, -1.0f, 0.0f }
 };
 

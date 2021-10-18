@@ -23,9 +23,15 @@ add_subdirectory(deps/spdlog)
 
 add_executable(Minecraft ${SRC_FILES} )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(Minecraft PUBLIC "/std:c++17")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if (CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        target_compile_options(Minecraft PUBLIC "/std:c++17")
+    else()
+        target_compile_options(Minecraft PUBLIC "-std=c++17")
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(Minecraft PUBLIC "-std=c++17")
 endif()
 

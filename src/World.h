@@ -14,7 +14,6 @@ class World {
 private:
 	std::unordered_map<ChunkLocation, Chunk> m_Chunks;
 	unsigned int m_Radius;
-	unsigned int m_NumChunks;
 
 	WorldGenerationState m_GenState;
 	ThreadPool m_ThreadPool;

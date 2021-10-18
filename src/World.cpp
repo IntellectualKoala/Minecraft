@@ -2,13 +2,13 @@
 #include "World.h"
 
 World::World(uint32_t seed, unsigned int radius)
-	: m_Radius(radius), m_NumChunks(0), m_GenState(WorldGenerationState::Idle),
+	: m_Radius(radius), m_GenState(WorldGenerationState::Idle),
 	m_Noise(siv::PerlinNoise(seed))
 {
 }
 
 World::World(unsigned int radius)
-	: m_Radius(radius), m_NumChunks(0), m_GenState(WorldGenerationState::Idle),
+	: m_Radius(radius), m_GenState(WorldGenerationState::Idle),
 	m_Noise(siv::PerlinNoise(std::mt19937()))
 {
 }
