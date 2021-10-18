@@ -157,7 +157,8 @@ void Chunk::AddMeshFace(const BlockTypeData& blockTypeData, const BlockFace& fac
 
 		m_MeshBuilder.vertices.emplace_back(ChunkVertex
 		{
-			vertex.position + position
+			vertex.position + position,
+			vertex.texcoords
 		});
 	}
 

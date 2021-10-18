@@ -9,7 +9,9 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT M
 
 file(GLOB_RECURSE SRC_FILES
     src/*.cpp
-    src/*.h)
+    src/*.h
+    deps/stb_image/stb_image.cpp
+    deps/stb_image/stb_image.h)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SRC_FILES})
 
@@ -19,7 +21,7 @@ add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
 
-add_executable(Minecraft ${SRC_FILES})
+add_executable(Minecraft ${SRC_FILES} )
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(Minecraft PUBLIC "/std:c++17")
@@ -59,5 +61,11 @@ foreach(SHADER_PATH ${SHADER_FILES})
     set_source_files_properties(${SHADER_OUTPUT_PATH} PROPERTIES GENERATED TRUE)
     target_sources(Minecraft PRIVATE ${SHADER_OUTPUT_PATH})
 endforeach()
+
+add_custom_command(
+            TARGET Minecraft
+            PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    ${CMAKE_SOURCE_DIR}/res/textures ${CMAKE_BINARY_DIR}/res/textures)
 
 target_precompile_headers(Minecraft PRIVATE src/pch.h)
