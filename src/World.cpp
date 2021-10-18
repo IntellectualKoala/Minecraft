@@ -47,7 +47,7 @@ void World::Generate(const ChunkLocation& origin) {
 
 	loop(m_Radius + 1, [&](const ChunkLocation& location) {
 		{
-			std::shared_lock<std::shared_mutex> sl(m_Mutex);
+			std::shared_lock<std::shared_mutex> lock(m_Mutex);
 			if (m_Chunks.find(location) != m_Chunks.end())
 				return;
 		}
@@ -107,6 +107,6 @@ const Chunk* World::SafeGetChunk(const ChunkLocation& location) const {
 }
 
 Chunk& World::GetChunk(const ChunkLocation& location) {
-	std::lock_guard<std::shared_mutex> lock(m_Mutex);
+	std::shared_lock<std::shared_mutex> lock(m_Mutex);
 	return m_Chunks.at(location);
 }
