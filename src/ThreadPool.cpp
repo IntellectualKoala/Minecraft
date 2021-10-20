@@ -18,7 +18,7 @@ void ThreadPool::Start(unsigned int threads) {
 				{
 					std::unique_lock<std::mutex> lock(m_Mutex);
 
-					m_Condition.wait(lock, [&] {
+					m_Condition.wait(lock, [&]() {
 						return (!m_Tasks.empty() || m_Terminate);
 					});
 

@@ -101,8 +101,6 @@ public:
 		++m_TotalIDs;
 		m_NextID = m_TotalIDs;
 
-		m_DoUpdateRenderData = true;
-
 		return id;
 	}
 
@@ -114,8 +112,6 @@ public:
 			// This might not be optimal
 			m_NextID = id;
 		});
-
-		m_DoUpdateRenderData = true;
 	}
 
 private:
@@ -196,9 +192,14 @@ private:
 	size_t m_CurrentFrame = 0;
 
 	bool m_FramebufferResized = false;
-	bool m_DoUpdateRenderData = true;
 
 	std::unique_ptr<World> m_World;
+	std::thread m_WorldThread;
+	std::mutex m_WorldMutex;
+	std::condition_variable_any m_WorldCondition;
+	bool m_RefreshWorld = true;
+	bool m_TerminateWorldThread = false;
+	bool m_DoUpdateRenderData = false;
 
 	void InitWindow() {
 		glfwInit();
@@ -272,17 +273,31 @@ private:
 		CreateUniformBuffers();
 		CreateDescriptorPool();
 		CreateDescriptorSets();
+		CreateCommandBuffers();
 		CreateSyncObjects();
 	}
 
 	void InitWorld() {
 		m_World = std::make_unique<World>(32);
-		m_World->Generate(PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position));
-		UpdateRenderData();
-	}
 
-	void UpdateRenderData() {
-		CreateCommandBuffers();
+		m_WorldThread = std::thread([&]() {
+			while (true) {
+				std::unique_lock<std::mutex> lock(m_WorldMutex);
+
+				m_WorldCondition.wait(lock, [&]() {
+					return (m_RefreshWorld || m_TerminateWorldThread);
+				});
+
+				if (m_TerminateWorldThread)
+					break;
+
+				auto chunkLocation = PosUtils::ConvertWorldPosToChunkLoc(m_Camera.position);
+				m_World->Refresh(chunkLocation);
+
+				m_RefreshWorld = false;
+				m_DoUpdateRenderData = true;
+			}
+		});
 	}
 
 	void MainLoop() {
@@ -325,16 +340,16 @@ private:
 		static auto prevChunkLocation = chunkLocation;
 
 		if (chunkLocation != prevChunkLocation) {
-			m_World->Refresh(chunkLocation);
+			m_RefreshWorld = true;
+			m_WorldCondition.notify_all();
 			prevChunkLocation = chunkLocation;
 		}
 
-		m_World->Update();
-
 		if (m_DoUpdateRenderData)
 		{
+			m_World->Update();
 			m_DeletionQueue.Flush();
-			UpdateRenderData();
+			CreateCommandBuffers();
 			m_DoUpdateRenderData = false;
 		}
 	}
@@ -397,6 +412,16 @@ private:
 	}
 
 	void Cleanup() {
+		{
+			std::unique_lock<std::mutex> lock(m_WorldMutex);
+			m_TerminateWorldThread = true;
+		}
+
+		m_WorldCondition.notify_all();
+
+		if (m_WorldThread.joinable())
+			m_WorldThread.join();
+
 		CleanupSwapChain();
 
 		vkDestroySampler(m_Device, m_TextureSampler, nullptr);
@@ -1256,7 +1281,7 @@ private:
 	}
 
 	template<typename T>
-	void CreateVertexBuffer(unsigned int id, std::vector<T> vertices) {
+	void CreateVertexBuffer(unsigned int id, const std::vector<T>&& vertices) {
 		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
 		auto& vertexBuffer = meshObject.vertexBuffer;
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
@@ -1278,7 +1303,7 @@ private:
 		vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 	}
 
-	void CreateIndexBuffer(unsigned int id, std::vector<uint32_t> indices) {
+	void CreateIndexBuffer(unsigned int id, const std::vector<uint32_t>&& indices) {
 		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
 		auto& indexBuffer = meshObject.indexBuffer;
 		meshObject.indexBufferSize = static_cast<uint32_t>(indices.size());
