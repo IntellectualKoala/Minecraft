@@ -83,7 +83,7 @@ public:
 	Camera m_Camera;
 
 	void Run() {
-		::Log::Init();
+		::Logger::Init();
 		InitWindow();
 		InitVulkan();
 		InitWorld();

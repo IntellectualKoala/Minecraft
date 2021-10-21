@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Core.h"
 
-std::shared_ptr<spdlog::logger> Log::s_Logger;
+std::shared_ptr<spdlog::logger> Logger::s_Logger;
 
-void Log::Init()
+void Logger::Init()
 {
 	auto color_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 	color_sink->set_pattern("%^[%T]: %v%$");
