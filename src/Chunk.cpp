@@ -9,7 +9,7 @@ Chunk::Chunk()
 }
 
 void Chunk::Generate(const siv::PerlinNoise& noise, ChunkLocation location) {
-	m_State = ChunkState::Ungenerated;
+	m_State = ChunkState::Generating;
 
 	m_Blocks.resize(Chunk::CHUNK_WIDTH * Chunk::CHUNK_HEIGHT * Chunk::CHUNK_DEPTH);
 
@@ -41,6 +41,7 @@ void Chunk::Generate(const siv::PerlinNoise& noise, ChunkLocation location) {
 
 void Chunk::GenerateMesh(World* world, ChunkLocation location) {
 	assert(m_State == ChunkState::Generated);
+	m_State = ChunkState::GeneratingMesh;
 
 	// A precondition for Chunk::GenerateMesh is that each
 	// chunk bordering the current one is already generated.
@@ -172,6 +173,7 @@ void Chunk::AddMeshFace(const BlockTypeData& blockTypeData, const BlockFace& fac
 
 void Chunk::BufferMesh() {
 	assert(m_State == ChunkState::GeneratedMesh);
+	m_State = ChunkState::Buffering;
 
 	m_MeshBuilder.id = ::BufferMesh(std::move(m_MeshBuilder.vertices), std::move(m_MeshBuilder.indices));
 

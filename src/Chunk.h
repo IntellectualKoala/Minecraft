@@ -118,10 +118,12 @@ struct ChunkMeshBuilder {
 
 enum class ChunkState : uint8_t {
 	Ungenerated,
+	Generating,
 	Generated,
+	GeneratingMesh,
 	GeneratedMesh,
-	Buffered,
-	Removed
+	Buffering,
+	Buffered
 };
 
 unsigned int BufferMesh(const std::vector<ChunkVertex>&& vertices, const std::vector<uint32_t>&& indices);

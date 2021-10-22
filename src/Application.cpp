@@ -20,9 +20,9 @@ const std::vector<const char*> deviceExtensions = {
 };
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+constexpr bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+constexpr bool enableValidationLayers = true;
 #endif
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -196,6 +196,7 @@ private:
 	std::unique_ptr<World> m_World;
 	std::thread m_WorldThread;
 	std::mutex m_WorldMutex;
+	std::mutex m_UpdateRenderDataMutex;
 	std::condition_variable_any m_WorldCondition;
 	bool m_RefreshWorld = true;
 	bool m_TerminateWorldThread = false;
@@ -295,7 +296,11 @@ private:
 				m_World->Refresh(chunkLocation);
 
 				m_RefreshWorld = false;
-				m_DoUpdateRenderData = true;
+
+				{
+					std::lock_guard<std::mutex> lock(m_UpdateRenderDataMutex);
+					m_DoUpdateRenderData = true;
+				}
 			}
 		});
 	}
@@ -345,12 +350,16 @@ private:
 			prevChunkLocation = chunkLocation;
 		}
 
-		if (m_DoUpdateRenderData)
 		{
-			m_World->Update();
-			m_DeletionQueue.Flush();
-			CreateCommandBuffers();
-			m_DoUpdateRenderData = false;
+			std::lock_guard<std::mutex> lock(m_UpdateRenderDataMutex);
+
+			if (m_DoUpdateRenderData)
+			{
+				m_World->Update();
+				m_DeletionQueue.Flush();
+				CreateCommandBuffers();
+				m_DoUpdateRenderData = false;
+			}
 		}
 	}
 
@@ -448,7 +457,7 @@ private:
 
 		vkDestroyDevice(m_Device, nullptr);
 
-		if (enableValidationLayers) {
+		if constexpr (enableValidationLayers) {
 			DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
 		}
 
@@ -509,7 +518,7 @@ private:
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-		if (enableValidationLayers) {
+		if constexpr (enableValidationLayers) {
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 
@@ -536,7 +545,7 @@ private:
 	}
 
 	void SetupDebugMessenger() {
-		if (!enableValidationLayers) return;
+		if constexpr (!enableValidationLayers) return;
 
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		PopulateDebugMessengerCreateInfo(createInfo);
@@ -607,7 +616,7 @@ private:
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-		if (enableValidationLayers) {
+		if constexpr (enableValidationLayers) {
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 		}
@@ -1792,7 +1801,7 @@ private:
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (enableValidationLayers) {
+		if constexpr (enableValidationLayers) {
 			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 
