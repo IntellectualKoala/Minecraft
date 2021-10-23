@@ -45,8 +45,8 @@ void Chunk::GenerateMesh(World* world, ChunkLocation location) {
 
 	// A precondition for Chunk::GenerateMesh is that each
 	// chunk bordering the current one is already generated.
-	Chunk& frontChunk = world->GetChunk(ChunkLocation { location.x, location.y + 1 });
-	Chunk& rightChunk = world->GetChunk(ChunkLocation { location.x + 1, location.y });
+	Chunk& frontChunk = world->GetChunk(ChunkLocation{ location.x, location.y + 1 });
+	Chunk& rightChunk = world->GetChunk(ChunkLocation{ location.x + 1, location.y });
 
 	location <<= 4;
 
@@ -68,10 +68,10 @@ void Chunk::GenerateMesh(World* world, ChunkLocation location) {
 				auto* rightBlock = xNotFinished
 					? GetBlock(rightBlockPosition)
 					: rightChunk.GetBlock({ 0, rightBlockPosition.y, rightBlockPosition.z });
-				
+
 				auto& frontBlockData = frontBlock->GetBlockTypeData();
 				auto& rightBlockData = rightBlock->GetBlockTypeData();
-				
+
 				if ((blockData.data & BlockTypeDataBits::BLOCK_DATA_SOLID_BIT) != 0) {
 					const iWorldPosition realPosition = {
 						x + location.x,
@@ -163,7 +163,7 @@ void Chunk::AddMeshFace(const BlockTypeData& blockTypeData, const BlockFace& fac
 		});
 	}
 
-	std::vector<uint32_t> indices {
+	std::vector<uint32_t> indices{
 		0, 1, 2, 2, 3, 0
 	};
 
