@@ -10,7 +10,6 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT M
 file(GLOB_RECURSE SRC_FILES
     src/*.cpp
     src/*.h
-    deps/stb_image/stb_image.cpp
     deps/stb_image/stb_image.h)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SRC_FILES})
@@ -20,6 +19,7 @@ find_package(Vulkan REQUIRED)
 add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
+add_subdirectory(deps/vma)
 
 add_executable(Minecraft ${SRC_FILES})
 
@@ -42,7 +42,8 @@ target_include_directories(Minecraft PUBLIC
                           deps/glm/include
                           deps/PerlinNoise
                           deps/spdlog/include
-                          deps/stb_image)
+                          deps/stb_image
+                          deps/vma/include)
 
 find_program(GLSLC glslc REQUIRED)
 

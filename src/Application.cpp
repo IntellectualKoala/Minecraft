@@ -107,6 +107,8 @@ public:
 	unsigned int BufferMesh(std::vector<T>&& vertices, std::vector<uint32_t>&& indices) {
 		unsigned int id = m_NextMeshObjectID;
 
+		//CreateVertexAndIndexBuffers<T>(id, std::move(vertices), std::move(indices));
+
 		CreateVertexBuffer<ChunkVertex>(id, std::move(vertices));
 		CreateIndexBuffer(id, std::move(indices));
 
@@ -127,6 +129,8 @@ public:
 	}
 
 private:
+	VmaAllocator m_Allocator;
+
 	GLFWwindow* m_Window;
 
 	VkInstance m_Instance;
@@ -203,7 +207,7 @@ private:
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		m_Window = glfwCreateWindow(WIDTH, HEIGHT, APP_TITLE, nullptr, nullptr);
+		m_Window = glfwCreateWindow(WIDTH, HEIGHT, APPLICATION_TITLE, nullptr, nullptr);
 		auto mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		glfwSetWindowPos(m_Window, (mode->width - WIDTH) / 2, (mode->height - HEIGHT) / 2);
 
@@ -310,7 +314,7 @@ private:
 				fps = nbFrames / fpsTimeAccumulator;
 
 				std::stringstream ss;
-				ss << APP_TITLE << ": " << fps << "fps";
+				ss << APPLICATION_TITLE << ": " << fps << "fps";
 
 				glfwSetWindowTitle(m_Window, ss.str().c_str());
 
@@ -1262,6 +1266,28 @@ private:
 
 		EndSingleTimeCommands(commandBuffer);
 	}
+
+	/*template<typename T>
+	void CreateVertexAndIndexBuffers(unsigned int id, std::vector<T>&& vertices, std::vector<uint32_t>&& indices) {
+		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
+
+		VmaAllocation allocation;
+
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		VkBufferCreateInfo vertexBufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		vertexBufferInfo.size = vertices.size();
+		vertexBufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+		vmaCreateBuffer(m_Allocator, &vertexBufferInfo, &allocInfo, &meshObject.vertexBuffer, &allocation, nullptr);
+
+		VkBufferCreateInfo indexBufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+		indexBufferInfo.size = indices.size();
+		indexBufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+		vmaCreateBuffer(m_Allocator, &indexBufferInfo, &allocInfo, &meshObject.indexBuffer, &allocation, nullptr);
+	}*/
 
 	template<typename T>
 	void CreateVertexBuffer(unsigned int id, std::vector<T>&& vertices) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#define APP_TITLE "Minecraft"
+#define APPLICATION_TITLE "Minecraft"
 
 class Logger
 {

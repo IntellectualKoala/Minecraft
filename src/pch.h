@@ -18,6 +18,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
+#include <vk_mem_alloc.h>
+
 #include <cmath>
 #include <iostream>
 #include <sstream>

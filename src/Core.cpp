@@ -14,6 +14,6 @@ void Logger::Init()
 	color_sink->set_color(spdlog::level::info, "\033[37m");
 #endif
 
-	s_Logger = std::make_shared<spdlog::logger>(APP_TITLE, color_sink);
+	s_Logger = std::make_shared<spdlog::logger>(APPLICATION_TITLE, color_sink);
 	s_Logger->set_level(spdlog::level::debug);
 }
