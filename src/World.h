@@ -35,9 +35,8 @@ public:
 	const Chunk* SafeGetChunk(const ChunkLocation& location) const;
 	Chunk& GetChunk(const ChunkLocation& location);
 
-	inline void UpdateRadius(const ChunkLocation& origin, unsigned int radius) {
-		m_Radius = radius;
-		Refresh(origin);
+	inline unsigned int GetRadius() const {
+		return m_Radius;
 	}
 
 	inline const WorldGenerationState& GetGenState() const {

@@ -166,7 +166,7 @@ void Chunk::AddMeshFace(const BlockTypeData& blockTypeData, const BlockFace& fac
 	std::vector<uint32_t> indices {
 		0, 1, 2, 2, 3, 0
 	};
-	
+
 	for (size_t i = 0; i < indices.size(); ++i)
 		m_MeshBuilder.indices.emplace_back(indices[i] + sizeOfVertices);
 }

@@ -21,7 +21,7 @@ add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
 add_subdirectory(deps/spdlog)
 
-add_executable(Minecraft ${SRC_FILES} )
+add_executable(Minecraft ${SRC_FILES})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(Minecraft PUBLIC "/std:c++17")

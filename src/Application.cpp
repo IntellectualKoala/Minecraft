@@ -62,6 +62,21 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 proj;
 };
 
+struct MeshObject {
+	VkBuffer vertexBuffer;
+	VkBuffer indexBuffer;
+	VkDeviceMemory vertexBufferMemory;
+	VkDeviceMemory indexBufferMemory;
+	unsigned int indexBufferSize;
+
+	void Destroy(VkDevice& device) {
+		vkDestroyBuffer(device, vertexBuffer, nullptr);
+		vkDestroyBuffer(device, indexBuffer, nullptr);
+		vkFreeMemory(device, vertexBufferMemory, nullptr);
+		vkFreeMemory(device, indexBufferMemory, nullptr);
+	}
+};
+
 struct DeletionQueue
 {
 	std::deque<std::function<void()>> deletors;
@@ -92,14 +107,14 @@ public:
 	}
 
 	template<typename T>
-	unsigned int BufferMesh(const std::vector<T>&& vertices, const std::vector<uint32_t>&& indices) {
-		unsigned int id = m_NextID;
+	unsigned int BufferMesh(std::vector<T>&& vertices, std::vector<uint32_t>&& indices) {
+		unsigned int id = m_NextMeshObjectID;
 
 		CreateVertexBuffer<ChunkVertex>(id, std::move(vertices));
 		CreateIndexBuffer(id, std::move(indices));
 
-		++m_TotalIDs;
-		m_NextID = m_TotalIDs;
+		++m_TotalMeshObjectIDs;
+		m_NextMeshObjectID = m_TotalMeshObjectIDs;
 
 		return id;
 	}
@@ -110,7 +125,7 @@ public:
 			m_MeshObjects.erase(id);
 
 			// This might not be optimal
-			m_NextID = id;
+			m_NextMeshObjectID = id;
 		});
 	}
 
@@ -156,24 +171,8 @@ private:
 	VkImageView m_TextureImageView;
 	VkSampler m_TextureSampler;
 
-	unsigned int m_NextID = 0;
-	unsigned int m_TotalIDs = 0;
-
-	struct MeshObject {
-		VkBuffer vertexBuffer;
-		VkBuffer indexBuffer;
-		VkDeviceMemory vertexBufferMemory;
-		VkDeviceMemory indexBufferMemory;
-		unsigned int indexBufferSize;
-
-		void Destroy(VkDevice& device) {
-			vkDestroyBuffer(device, vertexBuffer, nullptr);
-			vkDestroyBuffer(device, indexBuffer, nullptr);
-			vkFreeMemory(device, vertexBufferMemory, nullptr);
-			vkFreeMemory(device, indexBufferMemory, nullptr);
-		}
-	};
-
+	unsigned int m_NextMeshObjectID = 0;
+	unsigned int m_TotalMeshObjectIDs = 0;
 	std::unordered_map<unsigned int, MeshObject> m_MeshObjects;
 	DeletionQueue m_DeletionQueue;
 
@@ -223,28 +222,22 @@ private:
 
 			static float prevX = (float)xpos;
 			static float prevY = (float)ypos;
-			static float pitch = glm::degrees(glm::asin(app->m_Camera.front.y));
-			static float yaw = glm::degrees(glm::atan(app->m_Camera.front.z, app->m_Camera.front.x));
+			static float pitch = app->m_Camera.GetPitch();
+			static float yaw = app->m_Camera.GetYaw();
 
 			float xoffset = (float)(xpos - prevX);
 			float yoffset = (float)(prevY - ypos);
 			prevX = (float)xpos;
 			prevY = (float)ypos;
 
-			xoffset *= app->m_Camera.sensitivity;
-			yoffset *= app->m_Camera.sensitivity;
+			static float sensitivity = 0.15f;
+			xoffset *= sensitivity;
+			yoffset *= sensitivity;
 
 			yaw += xoffset;
 			pitch += yoffset;
 
-			yaw = fmodf(yaw, 360);
-			pitch = glm::clamp(pitch, -89.9f, 89.9f);
-
-			app->m_Camera.front = glm::normalize(glm::vec3{
-				cos(glm::radians(yaw)) * cos(glm::radians(pitch)),
-				sin(glm::radians(pitch)),
-				sin(glm::radians(yaw)) * cos(glm::radians(pitch))
-			});
+			app->m_Camera.SetPitchAndYaw(pitch, yaw);
 		});
 	}
 
@@ -1290,9 +1283,8 @@ private:
 	}
 
 	template<typename T>
-	void CreateVertexBuffer(unsigned int id, const std::vector<T>&& vertices) {
+	void CreateVertexBuffer(unsigned int id, std::vector<T>&& vertices) {
 		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
-		auto& vertexBuffer = meshObject.vertexBuffer;
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
 
 		VkBuffer stagingBuffer;
@@ -1304,17 +1296,16 @@ private:
 		memcpy(data, vertices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device, stagingBufferMemory);
 
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, meshObject.vertexBufferMemory);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, meshObject.vertexBuffer, meshObject.vertexBufferMemory);
 
-		CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+		CopyBuffer(stagingBuffer, meshObject.vertexBuffer, bufferSize);
 
 		vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
 		vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
 	}
 
-	void CreateIndexBuffer(unsigned int id, const std::vector<uint32_t>&& indices) {
+	void CreateIndexBuffer(unsigned int id, std::vector<uint32_t>&& indices) {
 		auto& meshObject = m_MeshObjects.try_emplace(id).first->second;
-		auto& indexBuffer = meshObject.indexBuffer;
 		meshObject.indexBufferSize = static_cast<uint32_t>(indices.size());
 		VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
 
@@ -1327,9 +1318,9 @@ private:
 		memcpy(data, indices.data(), (size_t)bufferSize);
 		vkUnmapMemory(m_Device, stagingBufferMemory);
 
-		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, meshObject.indexBufferMemory);
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, meshObject.indexBuffer, meshObject.indexBufferMemory);
 
-		CopyBuffer(stagingBuffer, indexBuffer, bufferSize);
+		CopyBuffer(stagingBuffer, meshObject.indexBuffer, bufferSize);
 
 		vkDestroyBuffer(m_Device, stagingBuffer, nullptr);
 		vkFreeMemory(m_Device, stagingBufferMemory, nullptr);
@@ -1873,7 +1864,7 @@ private:
 
 static Application* s_Application;
 
-unsigned int BufferMesh(const std::vector<ChunkVertex>&& vertices, const std::vector<uint32_t>&& indices) {
+unsigned int BufferMesh(std::vector<ChunkVertex>&& vertices, std::vector<uint32_t>&& indices) {
 	return s_Application->BufferMesh<ChunkVertex>(std::move(vertices), std::move(indices));
 }
 

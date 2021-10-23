@@ -126,7 +126,7 @@ enum class ChunkState : uint8_t {
 	Buffered
 };
 
-unsigned int BufferMesh(const std::vector<ChunkVertex>&& vertices, const std::vector<uint32_t>&& indices);
+unsigned int BufferMesh(std::vector<ChunkVertex>&& vertices, std::vector<uint32_t>&& indices);
 void DeleteMesh(unsigned int id);
 
 class Chunk {
