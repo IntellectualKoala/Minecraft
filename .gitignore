@@ -1,4 +1,19 @@
+#
+#   Common
+#
+
 build/
+
+#
+#   Windows
+#
+
 out/
 .vs/
 CMakeSettings.json
+
+#
+#   Linux
+#
+
+run.sh
