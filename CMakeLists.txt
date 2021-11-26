@@ -14,7 +14,7 @@ file(GLOB_RECURSE SRC_FILES
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SRC_FILES})
 
-find_package(Vulkan REQUIRED)
+include(FindVulkan)
 
 add_subdirectory(deps/glfw)
 add_subdirectory(deps/glm)
@@ -45,8 +45,6 @@ target_include_directories(Minecraft PUBLIC
                           deps/stb_image
                           deps/vma/include)
 
-find_program(GLSLC glslc REQUIRED)
-
 file(GLOB_RECURSE SHADER_FILES
     res/shaders/*.vert
     res/shaders/*.frag
@@ -60,7 +58,7 @@ foreach(SHADER_PATH ${SHADER_FILES})
 
     add_custom_command(
            OUTPUT ${SHADER_OUTPUT_PATH}
-           COMMAND ${GLSLC} -o ${SHADER_OUTPUT_PATH} ${SHADER_PATH}
+	   COMMAND glslangValidator -V -o ${SHADER_OUTPUT_PATH} ${SHADER_PATH}
            DEPENDS ${SHADER_PATH}
            IMPLICIT_DEPENDS CXX ${SHADER_PATH}
            VERBATIM)
